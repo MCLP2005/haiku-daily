@@ -20,39 +20,41 @@ extract_haiku() {
     local month_num="$3"
     local year="$4"
     
-    # Format the day for pattern matching
-    local day_pattern
-    
-    # Handle different day formats (1st, 2nd, 3rd, etc.)
-    case "$day" in
-        1|21|31) day_pattern="${day}st";;
-        2|22) day_pattern="${day}nd";;
-        3|23) day_pattern="${day}rd";;
-        *) day_pattern="${day}th";;
-    esac
-    
     # Extract month name from file name pattern
     local month_name=$(basename "$file" | cut -d'-' -f2 | cut -d'.' -f1)
+    
+    # Format day with leading zero for regex pattern (01, 02, etc.)
+    local day_padded=$(printf "%02d" "$day")
+    
+    # Create a regex pattern that matches all possible date formats
+    # This regex handles:
+    # - "Month Day, Year" format (e.g., "March 1, 2025")
+    # - "Month Dayth" format (e.g., "January 1st")
+    # - "Month Day" format (e.g., "January 1") 
+    # - Day can be with or without ordinal suffix (1st, 2nd, 3rd, etc.)
+    local date_regex="\\*\\*${month_name} ${day}(st|nd|rd|th)?(, [0-9]{4})?\\*\\*"
     
     # Find the haiku for the specified day
     local haiku=""
     local found=false
-    local next_day_found=false
+    local in_haiku=false
     
     while IFS= read -r line; do
         # Check if this is the start of the haiku for our day
-        if [[ "$line" == *"$month_name $day_pattern"* ]] || [[ "$line" == *"$month_name $day"* ]]; then
+        if [[ "$line" =~ $date_regex ]]; then
             found=true
+            in_haiku=true
             continue
         fi
         
-        # Check if we've reached the next day's haiku
-        if [[ "$found" == true && "$line" == "**"* ]]; then
+        # Check if we've reached the next day's haiku or a separator
+        if [[ "$in_haiku" == true && ("$line" == "**"* || "$line" == "---") ]]; then
+            in_haiku=false
             break
         fi
         
-        # Collect haiku lines
-        if [[ "$found" == true && "$line" != "---" && -n "$line" ]]; then
+        # Collect haiku lines (non-empty lines during our haiku section)
+        if [[ "$in_haiku" == true && -n "$line" ]]; then
             haiku="${haiku}${line} "
         fi
     done < "$file"
