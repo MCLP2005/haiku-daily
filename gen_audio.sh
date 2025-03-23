@@ -103,8 +103,8 @@ process_job() {
             -H "Authorization: Bearer $OPENAI_API_KEY" \
             -H "Content-Type: application/json" \
             -d "{
-                \"model\": \"tts-hd\",
-                \"voice\": \"nova\",
+                \"model\": \"tts-1-hd\",
+                \"voice\": \"echo\",
                 \"input\": \"$haiku\",
                 \"response_format\": \"mp3\"
             }" \
