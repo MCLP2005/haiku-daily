@@ -23,16 +23,20 @@ extract_haiku() {
     # Extract month name from file name pattern
     local month_name=$(basename "$file" | cut -d'-' -f2 | cut -d'.' -f1)
     
+    # Capitalize first letter of month name to match the actual format in files
+    local month_name_capitalized="$(tr '[:lower:]' '[:upper:]' <<< ${month_name:0:1})${month_name:1}"
+    
     # Format day with leading zero for regex pattern (01, 02, etc.)
     local day_padded=$(printf "%02d" "$day")
     
     # Create a regex pattern that matches all possible date formats
     # This regex handles:
-    # - "Month Day, Year" format (e.g., "March 1, 2025")
-    # - "Month Dayth" format (e.g., "January 1st")
-    # - "Month Day" format (e.g., "January 1") 
+    # - "Month Day, Year" format (e.g., "August 1, 2025")
+    # - "Month Dayth" format (e.g., "August 1st")
+    # - "Month Day" format (e.g., "August 1") 
     # - Day can be with or without ordinal suffix (1st, 2nd, 3rd, etc.)
-    local date_regex="\\*\\*${month_name} ${day}(st|nd|rd|th)?(, [0-9]{4})?\\*\\*"
+    local date_pattern="${month_name_capitalized} ${day}(st|nd|rd|th)?(, [0-9]{4})?"
+    local date_regex="\\*\\*${date_pattern}\\*\\*"
     
     # Find the haiku for the specified day
     local haiku=""
